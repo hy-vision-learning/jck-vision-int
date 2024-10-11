@@ -20,7 +20,7 @@ class DataPreProcessor:
         self.__logger.debug('data preprocessor init')
         
     def __data_mean_std(self):
-        data = torchvision.datasets.CIFAR100("./", train=True, download=True)
+        data = torchvision.datasets.CIFAR100("./data", train=True, download=True)
         x = np.concatenate([np.asarray(data[i][0]) for i in range(len(data))])
 
         mean = np.mean(x, axis=(0, 1))/255
