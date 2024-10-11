@@ -54,12 +54,12 @@ class Trainer:
         
     def __init_optimizer(self, args):
         if args.optimizer == OptimizerEnum.sgd:
-            self.logger.debug(f'optimizer init: sgd\tlr: {args.learning_rate}\tweight_decay: {args.weight_decay}')
-            return optim.SGD(self.model.parameters(), lr=args.learning_rate, momentum=0.9, weight_decay=args.weight_decay)
+            self.logger.debug(f'optimizer init: sgd\tlr: {args.max_learning_rate}\tweight_decay: {args.weight_decay}')
+            return optim.SGD(self.model.parameters(), lr=args.max_learning_rate, momentum=0.9, weight_decay=args.weight_decay)
         
         if args.optimizer == OptimizerEnum.adam:
-            self.logger.debug(f'optimizer init: adam\tlr: {args.learning_rate}\tweight_decay: {args.weight_decay}')
-            return optim.Adam(self.model.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
+            self.logger.debug(f'optimizer init: adam\tlr: {args.max_learning_rate}\tweight_decay: {args.weight_decay}')
+            return optim.Adam(self.model.parameters(), lr=args.max_learning_rate, weight_decay=args.weight_decay)
         return None
     
     def __init_scheduler(self, args):
@@ -70,11 +70,11 @@ class Trainer:
         if args.lr_scheduler == LRSchedulerEnum.cycle:
             self.logger.debug(f'lr scheduler cycle')
             return optim.lr_scheduler.CyclicLR(self.optimizer, base_lr=1e-5, 
-                    max_lr=args.learning_rate, step_size_up=len(self.data_pre.trainloader)*10, mode='triangular2')
+                    max_lr=args.max_learning_rate, step_size_up=len(self.data_pre.trainloader)*10, mode='triangular2')
             
         if args.lr_scheduler == LRSchedulerEnum.one_cycle:
             self.logger.debug(f'lr scheduler one cycle')
-            return optim.lr_scheduler.OneCycleLR(self.optimizer, args.learning_rate, epochs=self.epoch,
+            return optim.lr_scheduler.OneCycleLR(self.optimizer, args.max_learning_rate, epochs=self.epoch,
                     steps_per_epoch=len(self.data_pre.trainloader))
             
         if args.lr_scheduler == LRSchedulerEnum.step_lr:
@@ -83,11 +83,11 @@ class Trainer:
         
         if args.lr_scheduler == LRSchedulerEnum.cos_annealing:
             self.logger.debug(f'lr scheduler cos_annealing cycle')
-            return optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=25, eta_min=0.001)
+            return optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=25, eta_min=args.min_learning_rate)
         
         if args.lr_scheduler == LRSchedulerEnum.custom_annealing:
             self.logger.debug(f'lr scheduler custom cos annealing cycle')
-            return CosineAnnealingWarmUpRestarts(self.optimizer, T_0=60, T_mult=1, eta_max=0.1,  T_up=15, gamma=1)
+            return CosineAnnealingWarmUpRestarts(self.optimizer, T_0=60, T_mult=1, eta_max=args.min_learning_rate,  T_up=15, gamma=1)
         # if args.lr_scheduler == LRSchedulerEnum.lambda_lr:
         #     self.logger.debug(f'lr scheduler one cycle')
         #     return optim.lr_scheduler.LambdaLR(self.optimizer, lr_lambda=lr_scheduler_lambda,
