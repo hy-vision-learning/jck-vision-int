@@ -13,6 +13,11 @@ class ModelEnum(Enum):
     resnext50 = 'resnext50'
     wide_resnet_16_4 = 'wide_resnet_16_4'
     wide_resnet_28_10_03 = 'wide_resnet_28_10_03'
+    
+    densenet121 = 'densenet121'
+    densenet169 = 'densenet169'
+    densenet201 = 'densenet201'
+    densenet161 = 'densenet161'
 
     def __str__(self):
         return self.value

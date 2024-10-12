@@ -3,6 +3,7 @@ import torch.nn as nn
 import model.resnet as resnet
 import model.resnext as resnext
 import model.wide_resnet as wide_resnet
+import model.densenet as densenet
 
 from enums import ModelEnum
 import logging
@@ -44,6 +45,18 @@ class ModelPreProcessor:
         if m == ModelEnum.wide_resnet_28_10_03:
             self.logger.debug('model init: wide_resnet_28_10_03')
             return wide_resnet.wide_resnet_28_10_03(100)
+        if m == ModelEnum.densenet121:
+            self.logger.debug('model init: densenet121')
+            return densenet.densenet121(100)
+        if m == ModelEnum.densenet161:
+            self.logger.debug('model init: densenet161')
+            return densenet.densenet161(100)
+        if m == ModelEnum.densenet169:
+            self.logger.debug('model init: densenet169')
+            return densenet.densenet169(100)
+        if m == ModelEnum.densenet201:
+            self.logger.debug('model init: densenet201')
+            return densenet.densenet201(100)
         self.logger.debug('model custom')
         return None
     
