@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from torchinfo import summary
 
 from preprocess.preprocess_model import ModelPreProcessor
 from preprocess.preprocess_data import DataPreProcessor
@@ -38,6 +39,9 @@ class Trainer:
         self.gradient_clip = args.gradient_clip
         
         self.model = model_pre.model.to(self.device)
+        self.model = model_pre.init_model_weight(self.model)
+        
+        self.logger.debug(summary(self.model, input_size=(1, 3, 32, 32)))
         if args.parallel == 1:
             self.model = nn.DataParallel(self.model)
 
@@ -146,16 +150,16 @@ class Trainer:
             superclass = superclass_pred.float() / n
         return top1, top5, superclass, epoch_loss
     
-    def __feed(self, train_loader):
-        self.model.train()
+    def __feed(self, train_loader, model, criterion, optimizer, device):
+        model.train()
         running_loss = 0
-        update_time = isinstance(self.optimizer, optim.lr_scheduler.OneCycleLR) or isinstance(self.optimizer, optim.lr_scheduler.CyclicLR)
+        update_time = isinstance(optimizer, optim.lr_scheduler.OneCycleLR) or isinstance(optimizer, optim.lr_scheduler.CyclicLR)
         
         for X, y_true in tqdm(train_loader, desc='train'):
-            X = X.to(self.device)
-            y_true = y_true.to(self.device)
+            X = X.to(device)
+            y_true = y_true.to(device)
             
-            self.optimizer.zero_grad()
+            optimizer.zero_grad()
             
             # if (idx + 1) % 3 == 0:
             #     imgs, labels_a, labels_b, lambda_ = mixup(imgs, y_true)
@@ -165,9 +169,9 @@ class Trainer:
             #     y_hat, _  = model(X)
             #     loss = criterion(y_hat, y_true)
             
-            imgs, labels_a, labels_b, lambda_ = mixup.mixup(X, y_true, self.device)
+            imgs, labels_a, labels_b, lambda_ = mixup.mixup(X, y_true, device)
             y_hat, _  = self.model(imgs)
-            loss = mixup.mixup_criterion(self.criterion, pred=y_hat, y_a=labels_a, y_b=labels_b, lam=lambda_)
+            loss = mixup.mixup_criterion(criterion, pred=y_hat, y_a=labels_a, y_b=labels_b, lam=lambda_)
             
             # y_hat, _ = model(X)
             # loss = criterion(y_hat,y_true)
@@ -177,7 +181,7 @@ class Trainer:
             if self.gradient_clip != -1:
                 nn.utils.clip_grad_value_(self.model.parameters(), self.gradient_clip)
             
-            self.optimizer.step()
+            optimizer.step()
             
             if update_time:
                 self.lrs.append(self.__get_lr())
@@ -188,7 +192,7 @@ class Trainer:
             self.lr_scheduler.step()
         
         epoch_loss = running_loss / len(train_loader.dataset)
-        return epoch_loss
+        return model , optimizer, epoch_loss
     
     def train(self):
         best_loss = 1e10
@@ -212,7 +216,7 @@ class Trainer:
 
         for epoch in range(0, self.epoch):
 
-            train_loss = self.__feed(trainloader)
+            self.model, self.optimizer, train_loss = self.__feed(trainloader, self.model, self.criterion, self.optimizer, self.device)
             self.train_losses.append(train_loss)
 
             train_top1, _, _, _ = self.__get_eval(trainloader, get_top5=False, get_superclass=False)

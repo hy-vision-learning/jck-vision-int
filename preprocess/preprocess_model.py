@@ -17,7 +17,7 @@ class ModelPreProcessor:
             assert custom_model is not None, "custom 모델을 지정하려면 custom_model이 필요합니다."
             self.model = custom_model
             
-        self.init_model_weight()
+        # self.init_model_weight()
             
     def select_model(self, m: ModelEnum):
         if m == ModelEnum.resnet18:
@@ -47,8 +47,8 @@ class ModelPreProcessor:
         self.logger.debug('model custom')
         return None
     
-    def init_model_weight(self):
-        for m in self.model.modules():
+    def init_model_weight(self, model):
+        for m in model.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(m.weight, mode='fan_out')
                 if m.bias is not None:
@@ -60,3 +60,4 @@ class ModelPreProcessor:
                 nn.init.normal_(m.weight, std=1e-3)
                 if m.bias is not None:
                     nn.init.constant_(m.bias, 0)
+        return model
