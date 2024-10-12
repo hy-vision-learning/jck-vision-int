@@ -33,6 +33,7 @@ def get_arg_parse():
     parser.add_argument('-lf', '--log_file', type=int, help='로그 파일 출력 여부. 0=false, 1=true', default=1)
     
     parser.add_argument('-m', '--model', type=ModelEnum, help='학습 모델', choices=list(ModelEnum), default=ModelEnum.custom)
+    parser.add_argument('-p', '--parallel', type=int, help='멀티 gpu 사용 여부. 0=false, 1=true', default=0)
     parser.add_argument('-op', '--optimizer', type=OptimizerEnum, help='옵티마이저', choices=list(OptimizerEnum), default=OptimizerEnum.sgd)
     parser.add_argument('-ls', '--lr_scheduler', type=LRSchedulerEnum, help='lr 스케쥴러', choices=list(LRSchedulerEnum), default=LRSchedulerEnum.custom_annealing)
     
