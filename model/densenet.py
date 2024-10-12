@@ -57,20 +57,21 @@ class DenseNet(nn.Module):
 
         self.linear = nn.Linear(inner_channels, num_class)
 
-    def forward(self, x):
-        output = self.conv1(x)
-        output = self.features(output)
-        output = self.avgpool(output)
-        output = output.view(output.size()[0], -1)
-        output = self.linear(output)
-        return output
-
     def _make_dense_layers(self, block, in_channels, nblocks):
         dense_block = nn.Sequential()
         for index in range(nblocks):
             dense_block.add_module('bottle_neck_layer_{}'.format(index), block(in_channels, self.growth_rate))
             in_channels += self.growth_rate
         return dense_block
+
+    def forward(self, x):
+        output = self.conv1(x)
+        output = self.features(output)
+        output = self.avgpool(output)
+        output = output.view(output.size()[0], -1)
+        logits = self.linear(output)
+        probs = F.softmax(logits, dim=1)
+        return logits, probs
 
 
 def densenet121(class_num):
