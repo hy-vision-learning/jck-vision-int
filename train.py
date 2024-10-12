@@ -38,6 +38,9 @@ class Trainer:
         self.gradient_clip = args.gradient_clip
         
         self.model = model_pre.model.to(self.device)
+        if args.parallel == 1:
+            self.model = nn.DataParallel(self.model)
+
         self.data_pre = data_pre
         
         self.optimizer = self.__init_optimizer(args)
