@@ -26,6 +26,7 @@ class ModelEnum(Enum):
 class OptimizerEnum(Enum):
     sgd = 'sgd'
     adam = 'adam'
+    sam = 'sam'
 
     def __str__(self):
         return self.value

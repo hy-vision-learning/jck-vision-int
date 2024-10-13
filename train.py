@@ -7,6 +7,7 @@ from preprocess.preprocess_model import ModelPreProcessor
 from preprocess.preprocess_data import DataPreProcessor
 
 from custom_cosine import CosineAnnealingWarmUpRestarts
+from optimizer.sam import SAM
 
 from enums import (
     OptimizerEnum,
@@ -68,6 +69,11 @@ class Trainer:
         if args.optimizer == OptimizerEnum.adam:
             self.logger.debug(f'optimizer init: adam\tlr: {args.max_learning_rate}\tweight_decay: {args.weight_decay}')
             return optim.Adam(self.model.parameters(), lr=args.max_learning_rate, weight_decay=args.weight_decay)
+        
+        if args.optimizer == OptimizerEnum.sam:
+            self.logger.debug(f'optimizer init: sam\tlr: {args.max_learning_rate}\tweight_decay: {args.weight_decay}')
+            return SAM(self.model.parameters(), base_optimizer=torch.optim.SGD, rho=args.rho, adaptive=args.adaptive,
+                       lr=args.max_learning_rate, momentum=0.9, weight_decay=args.weight_decay)
         return None
     
     def __init_scheduler(self, args):
@@ -155,7 +161,7 @@ class Trainer:
     def __feed(self, train_loader, model, criterion, optimizer, device):
         model.train()
         running_loss = 0
-        update_time = isinstance(optimizer, optim.lr_scheduler.OneCycleLR) or isinstance(optimizer, optim.lr_scheduler.CyclicLR)
+        update_time = isinstance(self.lr_scheduler, optim.lr_scheduler.OneCycleLR) or isinstance(self.lr_scheduler, optim.lr_scheduler.CyclicLR)
         
         for idx, (X, y_true) in tqdm(enumerate(train_loader), desc='train'):
             X = X.to(device)
@@ -171,19 +177,27 @@ class Trainer:
                 y_hat, _  = model(X)
                 loss = criterion(y_hat, y_true)
             
-            # imgs, labels_a, labels_b, lambda_ = mixup.mixup(X, y_true, device)
-            # y_hat, _  = self.model(imgs)
-            # loss = mixup.mixup_criterion(criterion, pred=y_hat, y_a=labels_a, y_b=labels_b, lam=lambda_)
-            
-            # y_hat, _ = model(X)
-            # loss = criterion(y_hat,y_true)
             running_loss += loss.item() * X.size(0)
             loss.backward()
             
-            if self.gradient_clip != -1:
-                nn.utils.clip_grad_value_(self.model.parameters(), self.gradient_clip)
-            
-            optimizer.step()
+            if isinstance(optimizer, SAM):
+                optimizer.first_step(zero_grad=True)
+                
+                if self.mix_step == 0 or (idx + 1) % self.mix_step == 0:
+                    imgs, labels_a, labels_b, lambda_ = mixup.mixup(X, y_true, device)
+                    y_hat, _  = self.model(imgs)
+                    mixup.mixup_criterion(criterion, pred=y_hat, y_a=labels_a, y_b=labels_b, lam=lambda_).backward()
+                else:                    
+                    y_hat, _  = model(X)
+                    criterion(y_hat, y_true).backward()
+                
+                # if self.gradient_clip != -1:
+                #     nn.utils.clip_grad_value_(self.model.parameters(), self.gradient_clip)
+                optimizer.second_step(zero_grad=True)
+            else:
+                if self.gradient_clip != -1:
+                    nn.utils.clip_grad_value_(self.model.parameters(), self.gradient_clip)
+                optimizer.step()
             
             if update_time:
                 self.lrs.append(self.__get_lr())
