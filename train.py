@@ -37,6 +37,7 @@ class Trainer:
         
         self.epoch = args.epoch
         self.gradient_clip = args.gradient_clip
+        self.mix_step = args.mix_step
         
         self.model = model_pre.model.to(self.device)
         self.model = model_pre.init_model_weight(self.model)
@@ -84,9 +85,10 @@ class Trainer:
             return optim.lr_scheduler.OneCycleLR(self.optimizer, args.max_learning_rate, epochs=self.epoch,
                     steps_per_epoch=len(self.data_pre.trainloader))
             
-        if args.lr_scheduler == LRSchedulerEnum.step_lr:
+        if args.lr_scheduler == LRSchedulerEnum.step_lr: 
             self.logger.debug(f'lr scheduler step cycle')
-            return optim.lr_scheduler.StepLR(self.optimizer, step_size=60, gamma=0.4)
+            # return optim.lr_scheduler.StepLR(self.optimizer, step_size=60, gamma=0.4)
+            return optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[150, 225], gamma=0.1)
         
         if args.lr_scheduler == LRSchedulerEnum.cos_annealing:
             self.logger.debug(f'lr scheduler cos_annealing cycle')
@@ -155,23 +157,23 @@ class Trainer:
         running_loss = 0
         update_time = isinstance(optimizer, optim.lr_scheduler.OneCycleLR) or isinstance(optimizer, optim.lr_scheduler.CyclicLR)
         
-        for X, y_true in tqdm(train_loader, desc='train'):
+        for idx, (X, y_true) in tqdm(enumerate(train_loader), desc='train'):
             X = X.to(device)
             y_true = y_true.to(device)
             
             optimizer.zero_grad()
             
-            # if (idx + 1) % 3 == 0:
-            #     imgs, labels_a, labels_b, lambda_ = mixup(imgs, y_true)
-            #     y_hat, _  = model(imgs)
-            #     loss = mixup_criterion(criterion, pred=y_hat, labels_a_a=labels_a, labels_b=labels_b, lambda_=lambda_)
-            # else:                    
-            #     y_hat, _  = model(X)
-            #     loss = criterion(y_hat, y_true)
+            if self.mix_step == 0 or (idx + 1) % self.mix_step == 0:
+                imgs, labels_a, labels_b, lambda_ = mixup.mixup(X, y_true, device)
+                y_hat, _  = self.model(imgs)
+                loss = mixup.mixup_criterion(criterion, pred=y_hat, y_a=labels_a, y_b=labels_b, lam=lambda_)
+            else:                    
+                y_hat, _  = model(X)
+                loss = criterion(y_hat, y_true)
             
-            imgs, labels_a, labels_b, lambda_ = mixup.mixup(X, y_true, device)
-            y_hat, _  = self.model(imgs)
-            loss = mixup.mixup_criterion(criterion, pred=y_hat, y_a=labels_a, y_b=labels_b, lam=lambda_)
+            # imgs, labels_a, labels_b, lambda_ = mixup.mixup(X, y_true, device)
+            # y_hat, _  = self.model(imgs)
+            # loss = mixup.mixup_criterion(criterion, pred=y_hat, y_a=labels_a, y_b=labels_b, lam=lambda_)
             
             # y_hat, _ = model(X)
             # loss = criterion(y_hat,y_true)
