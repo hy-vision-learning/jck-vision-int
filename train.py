@@ -94,15 +94,15 @@ class Trainer:
         if args.lr_scheduler == LRSchedulerEnum.step_lr: 
             self.logger.debug(f'lr scheduler step cycle')
             # return optim.lr_scheduler.StepLR(self.optimizer, step_size=60, gamma=0.4)
-            return optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[150, 225], gamma=0.1)
+            return optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=args.step_milestone, gamma=0.1)
         
         if args.lr_scheduler == LRSchedulerEnum.cos_annealing:
             self.logger.debug(f'lr scheduler cos_annealing cycle')
-            return optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=25, eta_min=args.min_learning_rate)
+            return optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=args.cos_max, eta_min=args.min_learning_rate)
         
         if args.lr_scheduler == LRSchedulerEnum.custom_annealing:
             self.logger.debug(f'lr scheduler custom cos annealing cycle')
-            return CosineAnnealingWarmUpRestarts(self.optimizer, T_0=60, T_mult=1, eta_max=args.min_learning_rate,  T_up=15, gamma=1)
+            return CosineAnnealingWarmUpRestarts(self.optimizer, T_0=args.cos_max, T_mult=1, eta_max=args.min_learning_rate,  T_up=15, gamma=1)
         # if args.lr_scheduler == LRSchedulerEnum.lambda_lr:
         #     self.logger.debug(f'lr scheduler one cycle')
         #     return optim.lr_scheduler.LambdaLR(self.optimizer, lr_lambda=lr_scheduler_lambda,
