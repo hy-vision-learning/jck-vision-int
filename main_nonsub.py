@@ -40,6 +40,7 @@ def get_arg_parse():
     parser.add_argument('-ds', '--split_ratio', type=float, help='train/validation 분할 비율', default=0.2)
     parser.add_argument('-w', '--num_worker', type=int, help='train/validation 분할 비율', default=0)
     parser.add_argument('-b', '--batch_size', type=int, help='학습 배치사이즈', default=128)
+    parser.add_argument('-mc', '--mix_step', type=int, help='mix 적용시 몇 step마다 적용할지. 0은 모든 step에 적용.', default=0)
     
     parser.add_argument('-e', '--epoch', type=int, help='epoch', default=100)
     parser.add_argument('-mlr', '--max_learning_rate', type=float, help='optimizer/scheduler max learning rate 설정 (custom cos scheduler는 반대)', default=0.1)
@@ -47,6 +48,10 @@ def get_arg_parse():
     parser.add_argument('-wd', '--weight_decay', type=float, help='optimizer weight decay 설정', default=5e-4)
     parser.add_argument('-gc', '--gradient_clip', type=float, help='gradient clip 설정. -1은 비활성화', default=0.1)
     parser.add_argument('-es', '--early_stopping', type=int, help='ealry stoppin epoch 지정. -1은 비활성화', default=-1)
+    parser.add_argument('-ad', '--adaptive', type=int, help="adaptive SAM 사용 여부", default=1)
+    parser.add_argument('--rho', type=int, help="SAM rho 파라미터", default=2.0)
+    parser.add_argument('-cm', '--cos_max', type=int, help="cos annealing 주기", default=50)
+    parser.add_argument('-sm', '--step_milestone', nargs='+', type=int, help='step lr scheduler milestone', default=[50])
     
     args = parser.parse_args()
     
