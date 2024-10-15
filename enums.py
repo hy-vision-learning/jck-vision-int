@@ -45,3 +45,11 @@ class LRSchedulerEnum(Enum):
         return self.value
     
     
+class MixEnum(Enum):
+    none = 'none'
+    mixup = 'mixup'
+    cutmix = 'cutmix'
+
+    def __str__(self):
+        return self.value
+    

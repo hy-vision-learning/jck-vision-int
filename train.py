@@ -11,10 +11,12 @@ from optimizer.sam import SAM
 
 from enums import (
     OptimizerEnum,
-    LRSchedulerEnum
+    LRSchedulerEnum,
+    MixEnum
 )
 
 import mix.mixup as mixup
+import mix.cutmix as cutmix
 
 import logging
 from utils import get_default_device, class_to_superclass
@@ -39,6 +41,7 @@ class Trainer:
         self.epoch = args.epoch
         self.gradient_clip = args.gradient_clip
         self.mix_step = args.mix_step
+        self.mix_method = args.mix_method
         
         self.model = model_pre.model.to(self.device)
         self.model = model_pre.init_model_weight(self.model)
@@ -160,6 +163,22 @@ class Trainer:
             superclass = superclass_pred.float() / n
         return top1, top5, superclass, epoch_loss
     
+    
+    def __forward(self, idx, criterion, model, X, y_true, device):
+        if self.mix_method == MixEnum.mixup and (self.mix_step == 0 or (idx + 1) % self.mix_step == 0):
+            imgs, labels_a, labels_b, lambda_ = mixup.mixup(X, y_true, device)
+            y_hat, _  = self.model(imgs)
+            loss = mixup.mixup_criterion(criterion, pred=y_hat, y_a=labels_a, y_b=labels_b, lam=lambda_)
+        elif self.mix_method == MixEnum.cutmix and (self.mix_step == 0 or (idx + 1) % self.mix_step == 0):
+            imgs, labels_a, labels_b, lambda_ = cutmix.cutmix(X, y_true, device)
+            y_hat, _  = self.model(imgs)
+            y_hat, _ = model(input)
+            loss = cutmix.cutmix_criterion(criterion, pred=y_hat, y_a=labels_a, y_b=labels_b, lam=lambda_)
+        else:                    
+            y_hat, _  = model(X)
+            loss = criterion(y_hat, y_true)
+        return loss, model
+    
     def __feed(self, train_loader, model, criterion, optimizer, device):
         model.train()
         running_loss = 0
@@ -171,27 +190,15 @@ class Trainer:
             
             optimizer.zero_grad()
             
-            if self.mix_step == 0 or (idx + 1) % self.mix_step == 0:
-                imgs, labels_a, labels_b, lambda_ = mixup.mixup(X, y_true, device)
-                y_hat, _  = self.model(imgs)
-                loss = mixup.mixup_criterion(criterion, pred=y_hat, y_a=labels_a, y_b=labels_b, lam=lambda_)
-            else:                    
-                y_hat, _  = model(X)
-                loss = criterion(y_hat, y_true)
-            
+            loss, model = self.__forward(idx, criterion, model, X, y_true, device)
             running_loss += loss.item() * X.size(0)
             loss.backward()
             
             if isinstance(optimizer, SAM):
                 optimizer.first_step(zero_grad=True)
                 
-                if self.mix_step == 0 or (idx + 1) % self.mix_step == 0:
-                    imgs, labels_a, labels_b, lambda_ = mixup.mixup(X, y_true, device)
-                    y_hat, _  = self.model(imgs)
-                    mixup.mixup_criterion(criterion, pred=y_hat, y_a=labels_a, y_b=labels_b, lam=lambda_).backward()
-                else:                    
-                    y_hat, _  = model(X)
-                    criterion(y_hat, y_true).backward()
+                loss, model = self.__forward(idx, criterion, model, X, y_true, device)
+                loss.backward()
 
                 optimizer.second_step(zero_grad=True)
                 
