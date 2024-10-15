@@ -25,7 +25,7 @@ def cutmix_criterion(criterion, pred, y_a, y_b, lam):
 
 
 def cutmix(input, target, device, beta=1.0):
-    lam = torch.distributions.Beta(beta, beta)
+    lam = np.random.beta(beta, beta)
     rand_index = torch.randperm(input.size()[0]).to(device)
     target_a = target
     target_b = target[rand_index]
