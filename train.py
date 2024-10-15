@@ -167,12 +167,11 @@ class Trainer:
     def __forward(self, idx, criterion, model, X, y_true, device):
         if self.mix_method == MixEnum.mixup and (self.mix_step == 0 or (idx + 1) % self.mix_step == 0):
             imgs, labels_a, labels_b, lambda_ = mixup.mixup(X, y_true, device)
-            y_hat, _  = self.model(imgs)
+            y_hat, _  = model(imgs)
             loss = mixup.mixup_criterion(criterion, pred=y_hat, y_a=labels_a, y_b=labels_b, lam=lambda_)
         elif self.mix_method == MixEnum.cutmix and (self.mix_step == 0 or (idx + 1) % self.mix_step == 0):
             imgs, labels_a, labels_b, lambda_ = cutmix.cutmix(X, y_true, device)
-            y_hat, _  = self.model(imgs)
-            y_hat, _ = model(input)
+            y_hat, _ = model(imgs)
             loss = cutmix.cutmix_criterion(criterion, pred=y_hat, y_a=labels_a, y_b=labels_b, lam=lambda_)
         else:                    
             y_hat, _  = model(X)
