@@ -190,10 +190,11 @@ class Trainer:
                 else:                    
                     y_hat, _  = model(X)
                     criterion(y_hat, y_true).backward()
-                
-                # if self.gradient_clip != -1:
-                #     nn.utils.clip_grad_value_(self.model.parameters(), self.gradient_clip)
+
                 optimizer.second_step(zero_grad=True)
+                
+                if self.gradient_clip != -1:
+                    nn.utils.clip_grad_value_(self.model.parameters(), self.gradient_clip)
             else:
                 if self.gradient_clip != -1:
                     nn.utils.clip_grad_value_(self.model.parameters(), self.gradient_clip)
