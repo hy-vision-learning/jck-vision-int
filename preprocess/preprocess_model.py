@@ -13,7 +13,7 @@ import logging
 class ModelPreProcessor:
     def __init__(self, args, custom_model=None):
         self.logger = logging.getLogger('main')
-        self.model = self.select_model(args.model)
+        self.model = self.select_model(args.model, args)
         
         if self.model == None:
             assert custom_model is not None, "custom 모델을 지정하려면 custom_model이 필요합니다."
@@ -21,7 +21,7 @@ class ModelPreProcessor:
             
         # self.init_model_weight()
             
-    def select_model(self, m: ModelEnum):
+    def select_model(self, m: ModelEnum, args):
         if m == ModelEnum.resnet18:
             self.logger.debug('model init: resnet18')
             return resnet.resnet18(100)
@@ -70,6 +70,9 @@ class ModelPreProcessor:
         if m == ModelEnum.pyramidnet272_200:
             self.logger.debug('model init: pyramidnet272_200')
             return pyramidnet.pyramidnet272_200(100)
+        if m == ModelEnum.pyramidnet_custom:
+            self.logger.debug(f'model init: pyramidnet_custom {args.p_depth} {args.p_alpha}')
+            return pyramidnet.pyramidnet_custom(100, args.p_depth, args.p_alpha)
         self.logger.debug('model custom')
         return None
     

@@ -44,6 +44,9 @@ def get_arg_parse():
     parser.add_argument('-mc', '--mix_step', type=int, help='mix 적용시 몇 step마다 적용할지. 0은 모든 step에 적용.', default=0)
     parser.add_argument('-mt', '--mix_method', type=MixEnum, help='mix 방법', choices=list(MixEnum), default=MixEnum.mixup)
     
+    parser.add_argument('-pd', '--p_depth', type=int, help='pyramnidnet depth', default=164)
+    parser.add_argument('-pa', '--p_alpha', type=int, help='pyramnidnet alpha', default=84)
+    
     parser.add_argument('-e', '--epoch', type=int, help='epoch', default=100)
     parser.add_argument('-mlr', '--max_learning_rate', type=float, help='optimizer/scheduler max learning rate 설정 (custom cos scheduler는 반대)', default=0.1)
     parser.add_argument('-milr', '--min_learning_rate', type=float, help='optimizer/scheduler min learning rate 설정 (custom cos scheduler는 반대)', default=1e-4)

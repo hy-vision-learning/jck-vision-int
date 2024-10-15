@@ -23,6 +23,7 @@ class ModelEnum(Enum):
     pyramidnet200_240 = 'pyramidnet200_240'
     pyramidnet236_220 = 'pyramidnet236_220'
     pyramidnet272_200 = 'pyramidnet272_200'
+    pyramidnet_custom = 'pyramidnet_custom'
 
     def __str__(self):
         return self.value

@@ -178,4 +178,7 @@ def pyramidnet236_220(class_num):
 
 def pyramidnet272_200(class_num):
     return PyramidNet(272, 200, class_num, True)
+
+def pyramidnet_custom(class_num, depth, alpha):
+    return PyramidNet(depth, alpha, class_num, True)
     
