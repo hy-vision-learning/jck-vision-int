@@ -51,7 +51,9 @@ class Trainer:
         
         self.optimizer = self.__init_optimizer(args)
         self.lr_scheduler = self.__init_scheduler(args)
-        self.criterion = nn.CrossEntropyLoss()
+        self.criterion = nn.CrossEntropyLoss(
+            label_smoothing=args.label_smoothing
+        )
         
         datetime_now = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.model_save_path = os.path.join('.', 'model_dir', datetime_now)

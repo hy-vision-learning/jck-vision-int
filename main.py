@@ -47,6 +47,7 @@ def get_arg_parse():
     parser.add_argument('-milr', '--min_learning_rate', type=float, help='optimizer/scheduler min learning rate 설정 (custom cos scheduler는 반대)', default=1e-4)
     parser.add_argument('-wd', '--weight_decay', type=float, help='optimizer weight decay 설정', default=5e-4)
     parser.add_argument('-gc', '--gradient_clip', type=float, help='gradient clip 설정. -1은 비활성화', default=0.1)
+    parser.add_argument('-ls', '--label_smoothing', type=float, help='label smoothing 설정', default=0)
     parser.add_argument('-es', '--early_stopping', type=int, help='ealry stoppin epoch 지정. -1은 비활성화', default=-1)
     parser.add_argument('-ad', '--adaptive', type=int, help="adaptive SAM 사용 여부", default=1)
     parser.add_argument('--rho', type=int, help="SAM rho 파라미터", default=2.0)
