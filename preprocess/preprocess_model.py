@@ -4,6 +4,7 @@ import model.resnet as resnet
 import model.resnext as resnext
 import model.wide_resnet as wide_resnet
 import model.densenet as densenet
+import model.pyramidnet as pyramidnet
 
 from enums import ModelEnum
 import logging
@@ -57,6 +58,18 @@ class ModelPreProcessor:
         if m == ModelEnum.densenet201:
             self.logger.debug('model init: densenet201')
             return densenet.densenet201(100)
+        if m == ModelEnum.pyramidnet100_84:
+            self.logger.debug('model init: pyramidnet100_84')
+            return pyramidnet.pyramidnet100_84(100)
+        if m == ModelEnum.pyramidnet200_240:
+            self.logger.debug('model init: pyramidnet200_240')
+            return pyramidnet.pyramidnet200_240(100)
+        if m == ModelEnum.pyramidnet236_220:
+            self.logger.debug('model init: pyramidnet236_220')
+            return pyramidnet.pyramidnet236_220(100)
+        if m == ModelEnum.pyramidnet272_200:
+            self.logger.debug('model init: pyramidnet272_200')
+            return pyramidnet.pyramidnet272_200(100)
         self.logger.debug('model custom')
         return None
     

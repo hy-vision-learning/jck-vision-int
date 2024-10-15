@@ -18,6 +18,11 @@ class ModelEnum(Enum):
     densenet169 = 'densenet169'
     densenet201 = 'densenet201'
     densenet161 = 'densenet161'
+    
+    pyramidnet100_84 = 'pyramidnet100_84'
+    pyramidnet200_240 = 'pyramidnet200_240'
+    pyramidnet236_220 = 'pyramidnet236_220'
+    pyramidnet272_200 = 'pyramidnet272_200'
 
     def __str__(self):
         return self.value
