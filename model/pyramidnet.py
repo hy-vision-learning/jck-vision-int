@@ -3,11 +3,13 @@ import torch.nn as nn
 from torch.nn import functional as F
 import math
 
+from model.shakedrop import ShakeDrop
+
 
 class BasicBlock(nn.Module):
     outchannel_ratio = 1
 
-    def __init__(self, inplanes, planes, stride=1, downsample=None):
+    def __init__(self, inplanes, planes, stride=1, downsample=None, shake=False, p_shakedrop = 1.0):
         super(BasicBlock, self).__init__()
         self.bn1 = nn.BatchNorm2d(inplanes)
         self.conv1 = self.__make_conv3x3__(inplanes, planes, stride)        
@@ -15,6 +17,7 @@ class BasicBlock(nn.Module):
         self.conv2 = self.__make_conv3x3__(planes, planes)
         self.bn3 = nn.BatchNorm2d(planes)
         self.relu = nn.ReLU(inplace=True)
+        self.shake_drop = ShakeDrop(p_shakedrop)
         self.downsample = downsample
         
     def __make_conv3x3__(self, in_planes, out_planes, stride=1):
@@ -23,6 +26,7 @@ class BasicBlock(nn.Module):
     def forward(self, x):
         out = self.relu(self.bn2(self.conv1(self.bn1(x))))
         out = self.bn3(self.conv2(out))
+        out = self.shake_drop(out)
     
         if self.downsample is not None:
             shortcut = self.downsample(x)
@@ -48,7 +52,7 @@ class BasicBlock(nn.Module):
 class Bottleneck(nn.Module):
     outchannel_ratio = 4
 
-    def __init__(self, inplanes, planes, stride=1, downsample=None):
+    def __init__(self, inplanes, planes, stride=1, downsample=None, shake=False, p_shakedrop = 1.0):
         super(Bottleneck, self).__init__()
         self.bn1 = nn.BatchNorm2d(inplanes)
         self.conv1 = self.__make_conv1x1__(inplanes, planes)
@@ -58,6 +62,7 @@ class Bottleneck(nn.Module):
         self.conv3 = self.__make_conv1x1__(planes, planes * Bottleneck.outchannel_ratio)
         self.bn4 = nn.BatchNorm2d(planes * Bottleneck.outchannel_ratio)
         self.relu = nn.ReLU(inplace=True)
+        self.shake_drop = ShakeDrop(p_shakedrop)
         self.downsample = downsample
 
     def __make_conv3x3__(self, in_planes, out_planes, stride=1):
@@ -72,6 +77,7 @@ class Bottleneck(nn.Module):
         out = self.conv2(self.relu(self.bn2(out)))
         out = self.conv3(self.relu(self.bn3(out)))
         out = self.bn4(out)
+        out = self.shake_drop(out)
 
         if self.downsample is not None:
             shortcut = self.downsample(x)
@@ -95,10 +101,10 @@ class Bottleneck(nn.Module):
 
 
 class PyramidNet(nn.Module):
-        
-    def __init__(self, depth, alpha, num_classes, bottleneck=False):
+    def __init__(self, depth, alpha, num_classes, shake=False, bottleneck=False):
         super(PyramidNet, self).__init__()
         self.inplanes = 16
+        self.shake = shake
         
         if bottleneck == True:
             n = int((depth - 2) / 9)
@@ -106,6 +112,10 @@ class PyramidNet(nn.Module):
         else:
             n = int((depth - 2) / 6)
             block = BasicBlock
+        
+        if self.shake:
+            all_depth = n * 3
+            self.p_drop = [0.5/all_depth * (i + 1) for i in range(all_depth)]
 
         self.addrate = alpha / (3 * n * 1.0)
 
@@ -142,7 +152,7 @@ class PyramidNet(nn.Module):
         layers.append(block(self.input_featuremap_dim, int(round(self.featuremap_dim)), stride, downsample))
         for _ in range(1, block_depth):
             temp_featuremap_dim = self.featuremap_dim + self.addrate
-            layers.append(block(int(round(self.featuremap_dim)) * block.outchannel_ratio, int(round(temp_featuremap_dim)), 1))
+            layers.append(block(int(round(self.featuremap_dim)) * block.outchannel_ratio, int(round(temp_featuremap_dim)), 1, shake=self.shake))
             self.featuremap_dim  = temp_featuremap_dim
         self.input_featuremap_dim = int(round(self.featuremap_dim)) * block.outchannel_ratio
 
@@ -167,18 +177,18 @@ class PyramidNet(nn.Module):
         return logits, probs
         
     
-def pyramidnet100_84(class_num):
-    return PyramidNet(100, 84, class_num, True)
+def pyramidnet100_84(class_num, shake=False):
+    return PyramidNet(100, 84, class_num, shake=shake, bottleneck=True)
 
-def pyramidnet200_240(class_num):
-    return PyramidNet(200, 240, class_num, True)
+def pyramidnet200_240(class_num, shake=False):
+    return PyramidNet(200, 240, class_num, shake=shake, bottleneck=True)
 
-def pyramidnet236_220(class_num):
-    return PyramidNet(236, 220, class_num, True)
+def pyramidnet236_220(class_num, shake=False):
+    return PyramidNet(236, 220, class_num, shake=shake, bottleneck=True)
 
-def pyramidnet272_200(class_num):
-    return PyramidNet(272, 200, class_num, True)
+def pyramidnet272_200(class_num, shake=False):
+    return PyramidNet(272, 200, class_num, shake=shake, bottleneck=True)
 
-def pyramidnet_custom(class_num, depth, alpha):
-    return PyramidNet(depth, alpha, class_num, True)
+def pyramidnet_custom(class_num, depth, alpha, shake=False):
+    return PyramidNet(depth, alpha, class_num, shake=shake, bottleneck=True)
     
