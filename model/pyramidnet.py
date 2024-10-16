@@ -88,7 +88,6 @@ class Bottleneck(nn.Module):
         
         if self.shake:
             out = self.shake_drop(out)
-            self.shake_idx = 0
 
         if self.downsample is not None:
             shortcut = self.downsample(x)
@@ -127,6 +126,7 @@ class PyramidNet(nn.Module):
         if self.shake:
             all_depth = n * 3
             self.p_drop = [0.5/all_depth * (i + 1) for i in range(all_depth)]
+            self.shake_idx = 0
 
         self.addrate = alpha / (3 * n * 1.0)
 
