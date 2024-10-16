@@ -46,6 +46,7 @@ def get_arg_parse():
     
     parser.add_argument('-pd', '--p_depth', type=int, help='pyramnidnet depth', default=164)
     parser.add_argument('-pa', '--p_alpha', type=int, help='pyramnidnet alpha', default=84)
+    parser.add_argument('-ps', '--p_shake', type=int, help='pyramnidnet shake', default=0)
     
     parser.add_argument('-e', '--epoch', type=int, help='epoch', default=100)
     parser.add_argument('-mlr', '--max_learning_rate', type=float, help='optimizer/scheduler max learning rate 설정 (custom cos scheduler는 반대)', default=0.1)

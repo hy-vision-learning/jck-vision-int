@@ -60,19 +60,19 @@ class ModelPreProcessor:
             return densenet.densenet201(100)
         if m == ModelEnum.pyramidnet100_84:
             self.logger.debug('model init: pyramidnet100_84')
-            return pyramidnet.pyramidnet100_84(100)
+            return pyramidnet.pyramidnet100_84(100, shake=args.p_shake)
         if m == ModelEnum.pyramidnet200_240:
             self.logger.debug('model init: pyramidnet200_240')
-            return pyramidnet.pyramidnet200_240(100)
+            return pyramidnet.pyramidnet200_240(100, shake=args.p_shake)
         if m == ModelEnum.pyramidnet236_220:
             self.logger.debug('model init: pyramidnet236_220')
-            return pyramidnet.pyramidnet236_220(100)
+            return pyramidnet.pyramidnet236_220(100, shake=args.p_shake)
         if m == ModelEnum.pyramidnet272_200:
             self.logger.debug('model init: pyramidnet272_200')
-            return pyramidnet.pyramidnet272_200(100)
+            return pyramidnet.pyramidnet272_200(100, shake=args.p_shake)
         if m == ModelEnum.pyramidnet_custom:
             self.logger.debug(f'model init: pyramidnet_custom {args.p_depth} {args.p_alpha}')
-            return pyramidnet.pyramidnet_custom(100, args.p_depth, args.p_alpha)
+            return pyramidnet.pyramidnet_custom(100, args.p_depth, args.p_alpha, shake=args.p_shake)
         self.logger.debug('model custom')
         return None
     
