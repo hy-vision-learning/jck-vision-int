@@ -11,6 +11,9 @@ class BasicBlock(nn.Module):
 
     def __init__(self, inplanes, planes, stride=1, downsample=None, shake=False, p_shakedrop = 1.0):
         super(BasicBlock, self).__init__()
+        
+        self.shake = shake
+        
         self.bn1 = nn.BatchNorm2d(inplanes)
         self.conv1 = self.__make_conv3x3__(inplanes, planes, stride)        
         self.bn2 = nn.BatchNorm2d(planes)
@@ -26,7 +29,9 @@ class BasicBlock(nn.Module):
     def forward(self, x):
         out = self.relu(self.bn2(self.conv1(self.bn1(x))))
         out = self.bn3(self.conv2(out))
-        out = self.shake_drop(out)
+        
+        if self.shake:
+            out = self.shake_drop(out)
     
         if self.downsample is not None:
             shortcut = self.downsample(x)
@@ -54,6 +59,9 @@ class Bottleneck(nn.Module):
 
     def __init__(self, inplanes, planes, stride=1, downsample=None, shake=False, p_shakedrop = 1.0):
         super(Bottleneck, self).__init__()
+        
+        self.shake = shake
+        
         self.bn1 = nn.BatchNorm2d(inplanes)
         self.conv1 = self.__make_conv1x1__(inplanes, planes)
         self.bn2 = nn.BatchNorm2d(planes)
@@ -77,7 +85,9 @@ class Bottleneck(nn.Module):
         out = self.conv2(self.relu(self.bn2(out)))
         out = self.conv3(self.relu(self.bn3(out)))
         out = self.bn4(out)
-        out = self.shake_drop(out)
+        
+        if self.shake:
+            out = self.shake_drop(out)
 
         if self.downsample is not None:
             shortcut = self.downsample(x)
