@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
-import torchvision.transforms as tt
 from torchvision import datasets, transforms, models
 from torch.utils.data import DataLoader
 
@@ -40,6 +39,8 @@ def get_arg_parse():
     parser.add_argument('-ls', '--lr_scheduler', type=LRSchedulerEnum, help='lr 스케쥴러', choices=list(LRSchedulerEnum), default=LRSchedulerEnum.custom_annealing)
     
     parser.add_argument('-ds', '--split_ratio', type=float, help='train/validation 분할 비율', default=0.2)
+    parser.add_argument('-am', '--augmentation_mode', type=int, help='data augmentation mode', default=0)
+    parser.add_argument('-asp', '--augment_split', type=float, help='augmentation 분할 비율', default=0.5)
     parser.add_argument('-w', '--num_worker', type=int, help='train/validation 분할 비율', default=0)
     parser.add_argument('-b', '--batch_size', type=int, help='학습 배치사이즈', default=128)
     parser.add_argument('-mc', '--mix_step', type=int, help='mix 적용시 몇 step마다 적용할지. 0은 모든 step에 적용.', default=0)
@@ -163,20 +164,10 @@ def main(rank, args):
     
     logger.debug(f'init data preprocessing')
     
-    data_prep = DataPreProcessor(args.parallel)
+    data_prep = DataPreProcessor(args.parallel, args.augmentation_mode)
     
-    data_prep.transform_data(
-        tt.Compose([
-            tt.ToTensor(),
-            tt.Normalize(data_prep.data_mean, data_prep.data_std, inplace=True)]),
-        tt.Compose([
-            tt.RandomCrop(32, padding=4, padding_mode='reflect'), 
-            tt.RandomHorizontalFlip(1), 
-            tt.ToTensor(),
-            tt.Normalize(data_prep.data_mean, data_prep.data_std, inplace=True)]),
-        tt.Compose([tt.ToTensor(), tt.Normalize(data_prep.data_mean, data_prep.data_std, inplace=True)])
-    )
-    data_prep.split_data(args.split_ratio)
+    data_prep.transform_data()
+    data_prep.split_data(args.split_ratio, args.augment_split)
     data_prep.get_data_loader(args.batch_size, args.num_worker)
     
     logger.debug(f'init model')
