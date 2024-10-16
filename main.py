@@ -120,16 +120,49 @@ def fix_random(args):
     logger.debug('random seed fix')
 
 
-def main():
-    args = get_arg_parse()
-    init_logger(args)
-    fix_random(args)
+def setup_for_distributed(is_master):
+    import builtins as __builtin__
+    builtin_print = __builtin__.print
+
+    def print(*args, **kwargs):
+        force = kwargs.pop('force', False)
+        if is_master or force:
+            builtin_print(*args, **kwargs)
+
+    __builtin__.print = print
+
+
+def init_distributed_training(rank, opts):
+    opts.rank = rank
+    opts.gpu = opts.rank % torch.cuda.device_count()
+    local_gpu_id = int(opts.gpu_ids[opts.rank])
+    torch.cuda.set_device(local_gpu_id)
+    
+    if opts.rank is not None:
+        print("Use GPU: {} for training".format(local_gpu_id))
+
+    torch.distributed.init_process_group(backend='nccl',
+                            init_method='tcp://127.0.0.1:' + str(opts.port),
+                            world_size=opts.ngpus_per_node,
+                            rank=opts.rank)
+
+    torch.distributed.barrier()
+    setup_for_distributed(opts.rank == 0)
+    print('opts :',opts)
+
+
+def main(rank, args):
+    if args.parallel == 1:
+        init_distributed_training(rank, args)
+        local_gpu_id = args.gpu
+    
     
     logger = logging.getLogger('main')
     logger.debug(f'args: {vars(args)}')
     
     logger.debug(f'init data preprocessing')
-    data_prep = DataPreProcessor()
+    
+    data_prep = DataPreProcessor(args.parallel)
     
     data_prep.transform_data(
         tt.Compose([
@@ -163,4 +196,18 @@ def main():
     logger.debug(f'finish process')
 
 if __name__ == "__main__":
-    main()
+    args = get_arg_parse()
+    init_logger(args)
+    fix_random(args)
+    
+    if args.parallel == 0:
+        args.ngpus_per_node = torch.cuda.device_count()
+        args.gpu_ids = list(range(args.ngpus_per_node))
+        args.num_workers = args.ngpus_per_node * 4
+
+        torch.multiprocessing.spawn(main,
+                args=(args,),
+                nprocs=args.ngpus_per_node,
+                join=True)
+    else:
+        main(args)

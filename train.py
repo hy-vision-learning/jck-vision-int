@@ -3,6 +3,8 @@ import torch.nn as nn
 import torch.optim as optim
 from torchinfo import summary
 
+from torch.nn.parallel import DistributedDataParallel
+
 from preprocess.preprocess_model import ModelPreProcessor
 from preprocess.preprocess_data import DataPreProcessor
 
@@ -43,12 +45,16 @@ class Trainer:
         self.mix_step = args.mix_step
         self.mix_method = args.mix_method
         
-        self.model = model_pre.model.to(self.device)
-        self.model = model_pre.init_model_weight(self.model)
-        
-        self.logger.debug(summary(self.model, input_size=(1, 3, 32, 32)))
         if args.parallel == 1:
-            self.model = nn.DataParallel(self.model)
+            self.local_gpu_id = args.gpu
+            self.model = model_pre.model.cuda(self.local_gpu_id)
+            self.model = DistributedDataParallel(module=self.model, device_ids=[self.local_gpu_id])
+        else:
+            self.local_gpu_id = -1
+            self.model = model_pre.model.to(self.device)
+        
+        self.model = model_pre.init_model_weight(self.model)
+        self.logger.debug(summary(self.model, input_size=(1, 3, 32, 32)))
 
         self.data_pre = data_pre
         
@@ -133,8 +139,12 @@ class Trainer:
         with torch.no_grad() :
             self.model.eval()
             for X, y_true in tqdm(data_loader, desc='val'):
-                X = X.to(self.device)
-                y_true = y_true.to(self.device)
+                if self.local_gpu_id == -1:
+                    X = X.to(self.device)
+                    y_true = y_true.to(self.device)
+                else:
+                    X = X.to(self.local_gpu_id)
+                    y_true = y_true.to(self.local_gpu_id)
                 y_hat, y_prob = self.model(X)
                 _, predicted_labels = torch.max(y_prob,1)
                 
@@ -184,8 +194,12 @@ class Trainer:
         update_time = isinstance(self.lr_scheduler, optim.lr_scheduler.OneCycleLR) or isinstance(self.lr_scheduler, optim.lr_scheduler.CyclicLR)
         
         for idx, (X, y_true) in tqdm(enumerate(train_loader), desc='train'):
-            X = X.to(device)
-            y_true = y_true.to(device)
+            if self.local_gpu_id == -1:
+                X = X.to(self.device)
+                y_true = y_true.to(self.device)
+            else:
+                X = X.to(self.local_gpu_id)
+                y_true = y_true.to(self.local_gpu_id)
             
             optimizer.zero_grad()
             
