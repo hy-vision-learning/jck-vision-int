@@ -32,6 +32,7 @@ def get_arg_parse():
     
     parser.add_argument('-rs', '--random_seed', type=int, help='학습 랜덤 시드. -1은 랜덤 시드를 고정하지 않음.', default=4943872)
     parser.add_argument('-lf', '--log_file', type=int, help='로그 파일 출력 여부. 0=false, 1=true', default=1)
+    parser.add_argument('-po', '--port', type=int, default=2033)
     
     parser.add_argument('-m', '--model', type=ModelEnum, help='학습 모델', choices=list(ModelEnum), default=ModelEnum.custom)
     parser.add_argument('-p', '--parallel', type=int, help='멀티 gpu 사용 여부. 0=false, 1=true', default=0)
