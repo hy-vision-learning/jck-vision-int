@@ -154,7 +154,6 @@ def init_distributed_training(rank, opts):
 def main(rank, args):
     if args.parallel == 1:
         init_distributed_training(rank, args)
-        local_gpu_id = args.gpu
     
     
     logger = logging.getLogger('main')
@@ -200,7 +199,7 @@ if __name__ == "__main__":
     init_logger(args)
     fix_random(args)
     
-    if args.parallel == 0:
+    if args.parallel == 1:
         args.ngpus_per_node = torch.cuda.device_count()
         args.gpu_ids = list(range(args.ngpus_per_node))
         args.num_workers = args.ngpus_per_node * 4
