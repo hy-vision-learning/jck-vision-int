@@ -162,13 +162,16 @@ class PyramidNet(nn.Module):
         self.featuremap_dim = self.featuremap_dim + self.addrate
         layers.append(block(self.input_featuremap_dim, int(round(self.featuremap_dim)), stride, downsample,
                             shake=self.shake, p_shakedrop=self.p_drop[self.shake_idx] if self.shake else 0))
-        self.shake_idx += 1
+        
+        if self.shake:
+            self.shake_idx += 1
         for _ in range(1, block_depth):
             temp_featuremap_dim = self.featuremap_dim + self.addrate
             layers.append(block(int(round(self.featuremap_dim)) * block.outchannel_ratio, int(round(temp_featuremap_dim)),
                                 1, shake=self.shake, p_shakedrop=self.p_drop[self.shake_idx] if self.shake else 0))
             self.featuremap_dim  = temp_featuremap_dim
-            self.shake_idx += 1
+            if self.shake:
+                self.shake_idx += 1
         self.input_featuremap_dim = int(round(self.featuremap_dim)) * block.outchannel_ratio
 
         return nn.Sequential(*layers)
