@@ -9,7 +9,7 @@ from model.shakedrop import ShakeDrop
 class BasicBlock(nn.Module):
     outchannel_ratio = 1
 
-    def __init__(self, inplanes, planes, stride=1, downsample=None, shake=False, p_shakedrop = 1.0):
+    def __init__(self, inplanes, planes, stride=1, downsample=None, shake=False, p_shakedrop=1.0):
         super(BasicBlock, self).__init__()
         
         self.shake = shake
@@ -57,7 +57,7 @@ class BasicBlock(nn.Module):
 class Bottleneck(nn.Module):
     outchannel_ratio = 4
 
-    def __init__(self, inplanes, planes, stride=1, downsample=None, shake=False, p_shakedrop = 1.0):
+    def __init__(self, inplanes, planes, stride=1, downsample=None, shake=False, p_shakedrop=1.0):
         super(Bottleneck, self).__init__()
         
         self.shake = shake
@@ -88,6 +88,7 @@ class Bottleneck(nn.Module):
         
         if self.shake:
             out = self.shake_drop(out)
+            self.shake_idx = 0
 
         if self.downsample is not None:
             shortcut = self.downsample(x)
@@ -159,11 +160,15 @@ class PyramidNet(nn.Module):
 
         layers = []
         self.featuremap_dim = self.featuremap_dim + self.addrate
-        layers.append(block(self.input_featuremap_dim, int(round(self.featuremap_dim)), stride, downsample))
+        layers.append(block(self.input_featuremap_dim, int(round(self.featuremap_dim)), stride, downsample,
+                            shake=self.shake, p_shakedrop=self.p_drop[self.shake_idx] if self.shake else 0))
+        self.shake_idx += 1
         for _ in range(1, block_depth):
             temp_featuremap_dim = self.featuremap_dim + self.addrate
-            layers.append(block(int(round(self.featuremap_dim)) * block.outchannel_ratio, int(round(temp_featuremap_dim)), 1, shake=self.shake))
+            layers.append(block(int(round(self.featuremap_dim)) * block.outchannel_ratio, int(round(temp_featuremap_dim)),
+                                1, shake=self.shake, p_shakedrop=self.p_drop[self.shake_idx] if self.shake else 0))
             self.featuremap_dim  = temp_featuremap_dim
+            self.shake_idx += 1
         self.input_featuremap_dim = int(round(self.featuremap_dim)) * block.outchannel_ratio
 
         return nn.Sequential(*layers)
