@@ -210,4 +210,4 @@ if __name__ == "__main__":
                 nprocs=args.ngpus_per_node,
                 join=True)
     else:
-        main(args)
+        main(0, args)
