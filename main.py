@@ -62,6 +62,7 @@ def get_arg_parse():
     parser.add_argument('-sm', '--step_milestone', nargs='+', type=int, help='step lr scheduler milestone', default=[50])
     
     args = parser.parse_args()
+    args.p_shake = args.p_shake == 1
     
     return args
 
