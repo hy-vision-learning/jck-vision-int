@@ -60,7 +60,7 @@ class DataPreProcessor:
         self.__logger.debug(f'data split - train size: {len(self.__train_dataset)}\tvalidation size: {len(self.__val_dataset)}')
 
     def get_data_loader(self, batch_size, num_worker=0):
-        if self.parallel == 1:
+        if self.__parallel == 1:
             train_sampler = torch.utils.data.distributed.DistributedSampler(dataset=self.__train_dataset, shuffle=True)
             batch_sampler_train = torch.utils.data.BatchSampler(train_sampler, batch_size, drop_last=False)
             trainloader = torch.utils.data.DataLoader(self.__train_dataset, batch_sampler=batch_sampler_train, num_workers=num_worker, pin_memory=True)
