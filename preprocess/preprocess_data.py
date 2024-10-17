@@ -57,6 +57,17 @@ class DataPreProcessor:
                 tt.Normalize(self.data_mean, self.data_std, inplace=True)])
             self.__testset.transform = tt.Compose([
                 tt.ToTensor(), tt.Normalize(self.data_mean, self.data_std, inplace=True)])
+        elif self.__mode == 2:
+            self.__trainset_original.transform = tt.Compose([
+                tt.RandomCrop(32, padding=4, padding_mode='reflect'), 
+                tt.RandomHorizontalFlip(), 
+                tt.ToTensor(),
+                tt.Normalize(self.data_mean, self.data_std, inplace=True)])
+            self.__trainset_augment.transform = tt.Compose([
+                tt.ToTensor(),
+                tt.Normalize(self.data_mean, self.data_std, inplace=True)])
+            self.__testset.transform = tt.Compose([
+                tt.ToTensor(), tt.Normalize(self.data_mean, self.data_std, inplace=True)])
         else:
             assert False, 'augmentation mode error: 해당 모드는 존재하지 않습니다.'
             
@@ -114,6 +125,21 @@ class DataPreProcessor:
 
             self.__train_dataset = torch.utils.data.ConcatDataset([train_dataset_original, train_dataset_augment])
             self.__val_dataset = torch.utils.data.ConcatDataset([val_dataset_original, val_dataset_augment])
+        elif self.__mode == 2:
+            targets = self.__trainset_original.targets
+
+            train_idx, val_idx = [], []
+            for cls in range(100):
+                cls_idx = [i for i, t in enumerate(targets) if t == cls]
+                cls_train_idx, cls_val_idx = train_test_split(cls_idx, test_size=p, random_state=42)
+                train_idx.extend(cls_train_idx)
+                val_idx.extend(cls_val_idx)
+
+            train_dataset_original = torch.utils.data.Subset(self.__trainset_original, list(range(len(targets))))
+            val_dataset_original = torch.utils.data.Subset(self.__trainset_original, val_idx)
+
+            self.__train_dataset = torch.utils.data.ConcatDataset([train_dataset_original])
+            self.__val_dataset = torch.utils.data.ConcatDataset([val_dataset_original])
 
         self.__logger.debug(f'data split - train size: {len(self.__train_dataset)}\tvalidation size: {len(self.__val_dataset)}')
 
