@@ -31,6 +31,7 @@ def get_arg_parse():
     
     parser.add_argument('-t', '--test', type=int, help='테스트모드', default=0)
     parser.add_argument('-pm', '--model_path', type=str, help='모델 폴더 이름', default='')
+    parser.add_argument('--amp', type=int, help='amp 옵션', default=0)
     
     parser.add_argument('-rs', '--random_seed', type=int, help='학습 랜덤 시드. -1은 랜덤 시드를 고정하지 않음.', default=4943872)
     parser.add_argument('-lf', '--log_file', type=int, help='로그 파일 출력 여부. 0=false, 1=true', default=1)

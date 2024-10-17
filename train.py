@@ -43,6 +43,7 @@ class Trainer:
         self.logger = logging.getLogger('main')
         self.device = get_default_device()
         self.parallel = args.parallel
+        self.amp = args.amp
         
         self.scaler = GradScaler()
         
@@ -159,7 +160,10 @@ class Trainer:
                     X = X.to(self.local_gpu_id)
                     y_true = y_true.to(self.local_gpu_id)
                 
-                with autocast(device_type="cuda"):
+                if self.amp == 1:
+                    with autocast(device_type="cuda"):
+                        y_hat, y_prob = self.model(X)
+                else:
                     y_hat, y_prob = self.model(X)
                 _, predicted_labels = torch.max(y_prob,1)
                 
@@ -219,20 +223,27 @@ class Trainer:
             
             optimizer.zero_grad()
             
-            with autocast(device_type="cuda"):
+            if self.amp == 1:
+                with autocast(device_type="cuda"):
+                    loss, model = self.__forward(idx, criterion, model, X, y_true, device)
+                loss = self.scaler.scale(loss)
+                loss.backward()
+            else:
                 loss, model = self.__forward(idx, criterion, model, X, y_true, device)
-            
-            loss = self.scaler.scale(loss)
-            loss.backward()
+                loss.backward()
             
             if isinstance(optimizer, SAM):
                 optimizer.first_step(zero_grad=True)
                 
-                with autocast(device_type="cuda"):
+                if self.amp == 1:
+                    with autocast(device_type="cuda"):
+                        loss_second, model = self.__forward(idx, criterion, model, X, y_true, device)
+                    self.scaler.scale(loss_second).backward()
+                    self.scaler.step(optimizer.base_optimizer) 
+                    self.scaler.update()
+                else:
                     loss_second, model = self.__forward(idx, criterion, model, X, y_true, device)
-                self.scaler.scale(loss_second).backward()
-                self.scaler.step(optimizer.base_optimizer) 
-                self.scaler.update() 
+                    loss_second.backward()
 
                 optimizer.second_step(zero_grad=True)
                 
@@ -241,8 +252,12 @@ class Trainer:
             else:
                 if self.gradient_clip != -1:
                     nn.utils.clip_grad_value_(self.model.parameters(), self.gradient_clip)
-                self.scaler.step(optimizer) 
-                self.scaler.update() 
+                    
+                if self.amp == 1:
+                    self.scaler.step(optimizer) 
+                    self.scaler.update() 
+                else:
+                    optimizer.step()
             
             running_loss += loss.item() * X.size(0)
             
