@@ -307,7 +307,11 @@ class Trainer:
         best_idx = ''
         
         for i in ['last', 'acc', 'loss']:
-            self.model.load_state_dict(self.load_model(i))
+            try:
+                self.model.load_state_dict(self.load_model(i))
+            except:
+                self.logger.debug(f'{i} model can not load')
+                continue
             test_top1, test_top5, test_superclass, test_loss = self.__get_eval(self.data_pre.testloader)
             self.logger.debug(i + ': ' + str(test_top1.item()) + " " + str(test_top5.item()) + " " + str(test_superclass.item()))
             if test_top1 + test_top5 + test_superclass > best_sum:
