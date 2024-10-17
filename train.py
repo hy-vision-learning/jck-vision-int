@@ -8,6 +8,8 @@ from torch.nn.parallel import DistributedDataParallel
 from preprocess.preprocess_model import ModelPreProcessor
 from preprocess.preprocess_data import DataPreProcessor
 
+import numpy as np
+
 from custom_cosine import CosineAnnealingWarmUpRestarts
 from optimizer.sam import SAM
 
@@ -75,7 +77,7 @@ class Trainer:
     def __init_optimizer(self, args):
         if args.optimizer == OptimizerEnum.sgd:
             self.logger.debug(f'optimizer init: sgd\tlr: {args.max_learning_rate}\tweight_decay: {args.weight_decay}')
-            return optim.SGD(self.model.parameters(), lr=args.max_learning_rate, momentum=0.9, weight_decay=args.weight_decay)
+            return optim.SGD(self.model.parameters(), lr=args.max_learning_rate, momentum=0.9, weight_decay=args.weight_decay, nesterov=True)
         
         if args.optimizer == OptimizerEnum.adam:
             self.logger.debug(f'optimizer init: adam\tlr: {args.max_learning_rate}\tweight_decay: {args.weight_decay}')
@@ -175,11 +177,12 @@ class Trainer:
     
     
     def __forward(self, idx, criterion, model, X, y_true, device):
+        r = np.random.rand(1)
         if self.mix_method == MixEnum.mixup and (self.mix_step == 0 or (idx + 1) % self.mix_step == 0):
             imgs, labels_a, labels_b, lambda_ = mixup.mixup(X, y_true, device)
             y_hat, _  = model(imgs)
             loss = mixup.mixup_criterion(criterion, pred=y_hat, y_a=labels_a, y_b=labels_b, lam=lambda_)
-        elif self.mix_method == MixEnum.cutmix and (self.mix_step == 0 or (idx + 1) % self.mix_step == 0):
+        elif self.mix_method == MixEnum.cutmix and r < 0.5:
             imgs, labels_a, labels_b, lambda_ = cutmix.cutmix(X, y_true, device)
             y_hat, _ = model(imgs)
             loss = cutmix.cutmix_criterion(criterion, pred=y_hat, y_a=labels_a, y_b=labels_b, lam=lambda_)
