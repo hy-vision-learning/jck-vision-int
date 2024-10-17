@@ -29,6 +29,9 @@ from train import Trainer
 def get_arg_parse():
     parser = argparse.ArgumentParser()
     
+    parser.add_argument('-t', '--test', type=int, help='테스트모드', default=0)
+    parser.add_argument('-pm', '--model_path', type=str, help='모델 폴더 이름', default='')
+    
     parser.add_argument('-rs', '--random_seed', type=int, help='학습 랜덤 시드. -1은 랜덤 시드를 고정하지 않음.', default=4943872)
     parser.add_argument('-lf', '--log_file', type=int, help='로그 파일 출력 여부. 0=false, 1=true', default=1)
     parser.add_argument('-po', '--port', type=int, default=2033)
@@ -180,10 +183,15 @@ def main(rank, args):
     logger.debug(f'init trainer')
     trainer = Trainer(args, model_pre, data_prep)
     
-    logger.debug(f'train start')
-    trainer.train()
-    trainer.get_result()
-    trainer.save_history()
+    if args.test == 1:
+        logger.debug(f'test start')
+        trainer.model_save_path = os.path.join('.', 'model_dir', args.model_path)
+        trainer.get_result()
+    else:
+        logger.debug(f'train start')
+        trainer.train()
+        trainer.get_result()
+        trainer.save_history()
 
     logger.debug(f'finish process')
 
