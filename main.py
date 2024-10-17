@@ -203,7 +203,8 @@ if __name__ == "__main__":
     if args.parallel == 1:
         args.ngpus_per_node = torch.cuda.device_count()
         args.gpu_ids = list(range(args.ngpus_per_node))
-        args.num_workers = args.ngpus_per_node * 4
+        args.num_worker = args.ngpus_per_node * 4
+        args.batch_size = int(args.batch_size / args.ngpus_per_node)
 
         torch.multiprocessing.spawn(main,
                 args=(args,),

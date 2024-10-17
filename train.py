@@ -41,6 +41,7 @@ class Trainer:
                  data_pre: DataPreProcessor):
         self.logger = logging.getLogger('main')
         self.device = get_default_device()
+        self.parallel = args.parallel
         
         self.epoch = args.epoch
         self.gradient_clip = args.gradient_clip
@@ -62,9 +63,15 @@ class Trainer:
         
         self.optimizer = self.__init_optimizer(args)
         self.lr_scheduler = self.__init_scheduler(args)
-        self.criterion = nn.CrossEntropyLoss(
-            label_smoothing=args.label_smoothing
-        )
+        
+        if args.parallel == 1:
+            self.criterion = nn.CrossEntropyLoss(
+                label_smoothing=args.label_smoothing
+            ).cuda(self.local_gpu_id)
+        else:
+            self.criterion = nn.CrossEntropyLoss(
+                label_smoothing=args.label_smoothing
+            )
         
         datetime_now = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.model_save_path = os.path.join('.', 'model_dir', datetime_now)
@@ -122,6 +129,7 @@ class Trainer:
         #             last_epoch=-1)
         
     def save_best_model(self, type):
+        if self.parallel == 1 and self.local_gpu_id != 0: return
         torch.save(self.model.state_dict(), os.path.join(self.model_save_path, f'{type}_bset.pt'))
         self.logger.debug(f'{type} best model save')
         
