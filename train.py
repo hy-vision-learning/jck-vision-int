@@ -4,6 +4,7 @@ import torch.optim as optim
 from torchinfo import summary
 
 from torch.nn.parallel import DistributedDataParallel
+from torch.amp import autocast, GradScaler
 
 from preprocess.preprocess_model import ModelPreProcessor
 from preprocess.preprocess_data import DataPreProcessor
@@ -42,6 +43,8 @@ class Trainer:
         self.logger = logging.getLogger('main')
         self.device = get_default_device()
         self.parallel = args.parallel
+        
+        self.scaler = GradScaler()
         
         self.epoch = args.epoch
         self.gradient_clip = args.gradient_clip
@@ -155,7 +158,9 @@ class Trainer:
                 else:
                     X = X.to(self.local_gpu_id)
                     y_true = y_true.to(self.local_gpu_id)
-                y_hat, y_prob = self.model(X)
+                
+                with autocast(device_type="cuda"):
+                    y_hat, y_prob = self.model(X)
                 _, predicted_labels = torch.max(y_prob,1)
                 
                 loss = self.criterion(y_hat, y_true)
@@ -214,15 +219,20 @@ class Trainer:
             
             optimizer.zero_grad()
             
-            loss, model = self.__forward(idx, criterion, model, X, y_true, device)
-            running_loss += loss.item() * X.size(0)
+            with autocast(device_type="cuda"):
+                loss, model = self.__forward(idx, criterion, model, X, y_true, device)
+            
+            loss = self.scaler.scale(loss)
             loss.backward()
             
             if isinstance(optimizer, SAM):
                 optimizer.first_step(zero_grad=True)
                 
-                loss, model = self.__forward(idx, criterion, model, X, y_true, device)
-                loss.backward()
+                with autocast(device_type="cuda"):
+                    loss_second, model = self.__forward(idx, criterion, model, X, y_true, device)
+                self.scaler.scale(loss_second).backward()
+                self.scaler.step(optimizer.base_optimizer) 
+                self.scaler.update() 
 
                 optimizer.second_step(zero_grad=True)
                 
@@ -231,7 +241,10 @@ class Trainer:
             else:
                 if self.gradient_clip != -1:
                     nn.utils.clip_grad_value_(self.model.parameters(), self.gradient_clip)
-                optimizer.step()
+                self.scaler.step(optimizer) 
+                self.scaler.update() 
+            
+            running_loss += loss.item() * X.size(0)
             
             if update_time:
                 self.lrs.append(self.__get_lr())
