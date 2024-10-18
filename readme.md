@@ -1,6 +1,7 @@
 # 24-2 시각지능학습 코드 통합
 
-## 사용법
+
+## main.py 사용법
 
 argument 출력
 ```shell
@@ -42,3 +43,33 @@ python3 main.py --help
 ```shell
 python3 main.py -lr 0.1 -gc 0.01
 ```
+
+
+# How to Conduct a Peer Review for This Project
+
+The final submission code file is **[sub.ipynb](./sub.ipynb)**.
+
+
+## 1. Clone the repository
+
+```shell
+git clone git@github.com:hy-vision-learning/jck-vision-int.git
+```
+
+## 2. Move to jck-vision-init
+
+```shell
+cd ./jck-vision-init
+```
+
+## 3. Install Required Libraries
+
+All required packages can be installed via requirements.txt.
+
+```shell
+pip install -r requirements.txt
+```
+
+## 4. Change the random seed
+
+Open the [sub.ipynb](./sub.ipynb) file and change the random seed in the second cell.
