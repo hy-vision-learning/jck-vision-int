@@ -4,8 +4,8 @@ import torch.optim as optim
 from torchinfo import summary
 
 from torch.nn.parallel import DistributedDataParallel
-from torch.amp import autocast, GradScaler
-# from torch.cuda.amp import GradScaler
+from torch.amp import autocast
+from torch.cuda.amp import GradScaler
 
 from preprocess.preprocess_model import ModelPreProcessor
 from preprocess.preprocess_data import DataPreProcessor
