@@ -4,8 +4,8 @@ import torch.optim as optim
 from torchinfo import summary
 
 from torch.nn.parallel import DistributedDataParallel
-from torch.amp import autocast
-from torch.cuda.amp import GradScaler
+from torch.amp import autocast, GradScaler
+# from torch.cuda.amp import GradScaler
 
 from preprocess.preprocess_model import ModelPreProcessor
 from preprocess.preprocess_data import DataPreProcessor
@@ -47,6 +47,7 @@ class Trainer:
         self.amp = args.amp
         
         self.scaler = GradScaler()
+        self.validation_loss = 1e10
         
         self.epoch = args.epoch
         self.gradient_clip = args.gradient_clip
@@ -128,6 +129,12 @@ class Trainer:
         if args.lr_scheduler == LRSchedulerEnum.custom_annealing:
             self.logger.debug(f'lr scheduler custom cos annealing cycle')
             return CosineAnnealingWarmUpRestarts(self.optimizer, T_0=args.cos_max, T_mult=1, eta_max=args.min_learning_rate,  T_up=15, gamma=1)
+        
+        if args.lr_scheduler == LRSchedulerEnum.on_plateau:
+            self.logger.debug(f'lr scheduler ReduceLROnPlateau')
+            return optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, mode='min', factor=0.5, threshold=1e-3,
+                                                        patience=10, min_lr=args.min_learning_rate)
+        
         # if args.lr_scheduler == LRSchedulerEnum.lambda_lr:
         #     self.logger.debug(f'lr scheduler one cycle')
         #     return optim.lr_scheduler.LambdaLR(self.optimizer, lr_lambda=lr_scheduler_lambda,
@@ -266,15 +273,21 @@ class Trainer:
                 self.lrs.append(self.__get_lr())
                 self.lr_scheduler.step()
         
+        epoch_loss = running_loss / len(train_loader.dataset)
+        self.validation_loss = epoch_loss
+        
         if not update_time:
             self.lrs.append(self.__get_lr())
-            self.lr_scheduler.step()
+            if isinstance(self.lr_scheduler, optim.lr_scheduler.ReduceLROnPlateau):
+                self.lr_scheduler.step(epoch_loss)
+            else:
+                self.lr_scheduler.step()
         
-        epoch_loss = running_loss / len(train_loader.dataset)
         return model , optimizer, epoch_loss
     
     def train(self):
         best_loss = 1e10
+        self.validation_loss = 1e10
         best_acc = 0
         
         count_stop_epoch = 0

@@ -46,6 +46,7 @@ class LRSchedulerEnum(Enum):
     custom_annealing = 'custom_annealing'
     one_cycle = 'one_cycle'
     cycle = 'cycle'
+    on_plateau = 'on_plateau'
 
     def __str__(self):
         return self.value
