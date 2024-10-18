@@ -53,7 +53,7 @@ The final submission code file is **[sub.ipynb](./sub.ipynb)**.
 ## 1. Clone the repository
 
 ```shell
-git clone git@github.com:hy-vision-learning/jck-vision-int.git
+git clone https://github.com/hy-vision-learning/jck-vision-int.git
 ```
 
 ## 2. Move to jck-vision-init
