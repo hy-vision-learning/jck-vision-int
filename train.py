@@ -276,12 +276,15 @@ class Trainer:
         epoch_loss = running_loss / len(train_loader.dataset)
         self.validation_loss = epoch_loss
         
+        lr = self.__get_lr()
         if not update_time:
-            self.lrs.append(self.__get_lr())
+            self.lrs.append(lr)
             if isinstance(self.lr_scheduler, optim.lr_scheduler.ReduceLROnPlateau):
                 self.lr_scheduler.step(epoch_loss)
             else:
                 self.lr_scheduler.step()
+            
+        self.logger.debug(f'lr: {lr}')
         
         return model , optimizer, epoch_loss
     
