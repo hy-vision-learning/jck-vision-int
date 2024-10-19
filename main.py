@@ -25,6 +25,10 @@ from preprocess.preprocess_data import DataPreProcessor
 from preprocess.preprocess_model import ModelPreProcessor
 from train import Trainer
 
+import torch.autograd as autograd
+
+# autograd.set_detect_anomaly(True)
+
 
 def get_arg_parse():
     parser = argparse.ArgumentParser()

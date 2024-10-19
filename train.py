@@ -3,6 +3,8 @@ import torch.nn as nn
 import torch.optim as optim
 from torchinfo import summary
 
+import torch.nn.functional as F
+
 from torch.nn.parallel import DistributedDataParallel
 from torch.amp import autocast
 from torch.cuda.amp import GradScaler
@@ -74,6 +76,7 @@ class Trainer:
             self.criterion = nn.CrossEntropyLoss(
                 label_smoothing=args.label_smoothing
             ).cuda(self.local_gpu_id)
+            # self.criterion = self.__stable_cross_entropy_loss
         else:
             self.criterion = nn.CrossEntropyLoss(
                 label_smoothing=args.label_smoothing
@@ -132,13 +135,25 @@ class Trainer:
         
         if args.lr_scheduler == LRSchedulerEnum.on_plateau:
             self.logger.debug(f'lr scheduler ReduceLROnPlateau')
-            return optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, mode='min', factor=0.5, threshold=1e-3,
-                                                        patience=10, min_lr=args.min_learning_rate)
+            return optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, mode='min', factor=0.5, threshold=1e-2,
+                                                        patience=5, min_lr=args.min_learning_rate)
         
         # if args.lr_scheduler == LRSchedulerEnum.lambda_lr:
         #     self.logger.debug(f'lr scheduler one cycle')
         #     return optim.lr_scheduler.LambdaLR(self.optimizer, lr_lambda=lr_scheduler_lambda,
         #             last_epoch=-1)
+        
+    def __stable_cross_entropy_loss(self, output, target, label_smoothing=0.1, epsilon=1e-8):
+        num_classes = output.size(-1)
+        log_probs = F.log_softmax(output.float(), dim=-1)
+
+        with torch.no_grad():
+            true_dist = torch.zeros_like(log_probs)
+            true_dist.fill_(label_smoothing / (num_classes - 1))
+            true_dist.scatter_(1, target.unsqueeze(1), 1.0 - label_smoothing)
+
+        loss = torch.sum(-true_dist * log_probs, dim=-1).mean()
+        return loss + epsilon
         
     def save_best_model(self, type):
         if self.parallel == 1 and self.local_gpu_id != 0: return
@@ -205,15 +220,30 @@ class Trainer:
         r = np.random.rand(1)
         if self.mix_method == MixEnum.mixup and (self.mix_step == 0 or (idx + 1) % self.mix_step == 0):
             imgs, labels_a, labels_b, lambda_ = mixup.mixup(X, y_true, device)
-            y_hat, _  = model(imgs)
-            loss = mixup.mixup_criterion(criterion, pred=y_hat, y_a=labels_a, y_b=labels_b, lam=lambda_)
+            if self.amp == 1:
+                with autocast(device_type="cuda"):
+                    y_hat, _  = model(imgs)
+                    loss = mixup.mixup_criterion(criterion, pred=y_hat, y_a=labels_a, y_b=labels_b, lam=lambda_)
+            else:
+                y_hat, _  = model(imgs)
+                loss = mixup.mixup_criterion(criterion, pred=y_hat, y_a=labels_a, y_b=labels_b, lam=lambda_)
         elif self.mix_method == MixEnum.cutmix and r < 0.5:
             imgs, labels_a, labels_b, lambda_ = cutmix.cutmix(X, y_true, device)
-            y_hat, _ = model(imgs)
-            loss = cutmix.cutmix_criterion(criterion, pred=y_hat, y_a=labels_a, y_b=labels_b, lam=lambda_)
+            if self.amp == 1:
+                with autocast(device_type="cuda"):
+                    y_hat, _ = model(imgs)
+                    loss = cutmix.cutmix_criterion(criterion, pred=y_hat, y_a=labels_a, y_b=labels_b, lam=lambda_)
+            else:
+                y_hat, _ = model(imgs)
+                loss = cutmix.cutmix_criterion(criterion, pred=y_hat, y_a=labels_a, y_b=labels_b, lam=lambda_)
         else:                    
-            y_hat, _  = model(X)
-            loss = criterion(y_hat, y_true)
+            if self.amp == 1:
+                with autocast(device_type="cuda"):
+                    y_hat, _  = model(X)
+                    loss = criterion(y_hat, y_true)
+            else:
+                y_hat, _  = model(X)
+                loss = criterion(y_hat, y_true)
         return loss, model
     
     def __feed(self, train_loader, model, criterion, optimizer, device):
@@ -232,10 +262,8 @@ class Trainer:
             optimizer.zero_grad()
             
             if self.amp == 1:
-                with autocast(device_type="cuda"):
-                    loss, model = self.__forward(idx, criterion, model, X, y_true, device)
-                loss = self.scaler.scale(loss)
-                loss.backward()
+                loss, model = self.__forward(idx, criterion, model, X, y_true, device)
+                self.scaler.scale(loss).backward()
             else:
                 loss, model = self.__forward(idx, criterion, model, X, y_true, device)
                 loss.backward()
@@ -244,8 +272,7 @@ class Trainer:
                 optimizer.first_step(zero_grad=True)
                 
                 if self.amp == 1:
-                    with autocast(device_type="cuda"):
-                        loss_second, model = self.__forward(idx, criterion, model, X, y_true, device)
+                    loss_second, model = self.__forward(idx, criterion, model, X, y_true, device)
                     self.scaler.scale(loss_second).backward()
                     self.scaler.step(optimizer.base_optimizer) 
                     self.scaler.update()
@@ -253,13 +280,13 @@ class Trainer:
                     loss_second, model = self.__forward(idx, criterion, model, X, y_true, device)
                     loss_second.backward()
 
-                optimizer.second_step(zero_grad=True)
-                
                 if self.gradient_clip != -1:
                     nn.utils.clip_grad_value_(self.model.parameters(), self.gradient_clip)
+
+                optimizer.second_step(zero_grad=True)
             else:
                 if self.gradient_clip != -1:
-                    nn.utils.clip_grad_value_(self.model.parameters(), self.gradient_clip)
+                    nn.utils.clip_grad_value_(self.model.parameters(), self.gradient_clip)   
                     
                 if self.amp == 1:
                     self.scaler.step(optimizer) 
