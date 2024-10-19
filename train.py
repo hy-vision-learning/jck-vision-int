@@ -82,7 +82,10 @@ class Trainer:
                 label_smoothing=args.label_smoothing
             )
         
-        datetime_now = datetime.now().strftime("%Y%m%d_%H%M%S")
+        if args.model_path != '':
+            datetime_now = args.model_path
+        else:
+            datetime_now = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.model_save_path = os.path.join('.', 'model_dir', datetime_now)
         if not os.path.exists(self.model_save_path):
             os.makedirs(self.model_save_path)
