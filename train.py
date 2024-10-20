@@ -97,7 +97,7 @@ class Trainer:
     def __init_optimizer(self, args):
         if args.optimizer == OptimizerEnum.sgd:
             self.logger.debug(f'optimizer init: sgd\tlr: {args.max_learning_rate}\tweight_decay: {args.weight_decay}')
-            return optim.SGD(self.model.parameters(), lr=args.max_learning_rate, momentum=0.9, weight_decay=args.weight_decay, nesterov=True)
+            return optim.SGD(self.model.parameters(), lr=args.max_learning_rate, momentum=0.9, weight_decay=args.weight_decay, nesterov=args.nesterov == 1)
         
         if args.optimizer == OptimizerEnum.adam:
             self.logger.debug(f'optimizer init: adam\tlr: {args.max_learning_rate}\tweight_decay: {args.weight_decay}')

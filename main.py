@@ -66,6 +66,7 @@ def get_arg_parse():
     parser.add_argument('-lsm', '--label_smoothing', type=float, help='label smoothing 설정', default=0)
     parser.add_argument('-es', '--early_stopping', type=int, help='ealry stoppin epoch 지정. -1은 비활성화', default=-1)
     parser.add_argument('-ad', '--adaptive', type=int, help="adaptive SAM 사용 여부", default=1)
+    parser.add_argument('-snt', '--nesterov', type=int, help="nesterov sgd 사용 여부", default=1)
     parser.add_argument('--rho', type=int, help="SAM rho 파라미터", default=2.0)
     parser.add_argument('-cm', '--cos_max', type=int, help="cos annealing 주기", default=50)
     parser.add_argument('-cp', '--cut_p', type=float, help="cutmix 적용 확률", default=0.5)
