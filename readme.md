@@ -3,8 +3,6 @@
 
 # How to Conduct a Peer Review for This Project
 
-The final submission code file is **[sub.ipynb](./sub.ipynb)**.
-
 
 ## 1. Clone the repository
 
