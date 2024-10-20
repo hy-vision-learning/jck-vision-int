@@ -1,6 +1,55 @@
 # 24-2 시각지능학습 코드 통합
 
 
+# How to Conduct a Peer Review for This Project
+
+The final submission code file is **[sub.ipynb](./sub.ipynb)**.
+
+
+## 1. Clone the repository
+
+```shell
+git clone https://github.com/hy-vision-learning/jck-vision-int.git
+```
+
+## 2. Move to jck-vision-init
+
+```shell
+cd ./jck-vision-init
+```
+
+## 3. Install Required Libraries
+
+All required packages can be installed via requirements.txt.
+
+```shell
+pip install -r requirements.txt
+```
+
+## 4. Change the random seed
+
+Open the [change_randomseed.py](./change_randomseed.py) file and change the random seed.
+
+## 	5. Run the code
+
+We are ensembling WideResNet, PyramidNet, and DenseNet. Therefore, a total of four runs are required.
+
+Please train the models by running [ensemble-pyramidnet.ipynb](./ensemble-pyramidnet.ipynb), [ensemble-densenet.ipynb](./ensemble-densenet.ipynb), and [ensemble-wideresnet.ipynb](./ensemble-wideresnet.ipynb) one at a time. Once all the training is complete, run [ensemble-final.ipynb](./ensemble-final.ipynb) to output the final results.
+
+## 6.	Check the Results
+
+The training time for each model will be displayed immediately after the training is completed.  
+
+![p1](./img/p1.png)  
+
+  
+
+The final training results will be output in the final file.  
+
+![p1](./img/p2.png)
+
+
+
 ## main.py 사용법
 
 argument 출력
@@ -37,39 +86,3 @@ python3 main.py --help
 -es EARLY_STOPPING, --early_stopping EARLY_STOPPING
                     ealry stoppin epoch 지정. -1은 비활성화
 ```
-
-## 실행
-예)
-```shell
-python3 main.py -lr 0.1 -gc 0.01
-```
-
-
-# How to Conduct a Peer Review for This Project
-
-The final submission code file is **[sub.ipynb](./sub.ipynb)**.
-
-
-## 1. Clone the repository
-
-```shell
-git clone https://github.com/hy-vision-learning/jck-vision-int.git
-```
-
-## 2. Move to jck-vision-init
-
-```shell
-cd ./jck-vision-init
-```
-
-## 3. Install Required Libraries
-
-All required packages can be installed via requirements.txt.
-
-```shell
-pip install -r requirements.txt
-```
-
-## 4. Change the random seed
-
-Open the [sub.ipynb](./sub.ipynb) file and change the random seed in the second cell.
