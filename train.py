@@ -68,6 +68,7 @@ class Trainer:
         self.logger.debug(summary(self.model, input_size=(1, 3, 32, 32)))
 
         self.data_pre = data_pre
+        self.cut_p = args.cut_p
         
         self.optimizer = self.__init_optimizer(args)
         self.lr_scheduler = self.__init_scheduler(args)
@@ -230,7 +231,7 @@ class Trainer:
             else:
                 y_hat, _  = model(imgs)
                 loss = mixup.mixup_criterion(criterion, pred=y_hat, y_a=labels_a, y_b=labels_b, lam=lambda_)
-        elif self.mix_method == MixEnum.cutmix and r < 0.5:
+        elif self.mix_method == MixEnum.cutmix and r < self.cut_p:
             imgs, labels_a, labels_b, lambda_ = cutmix.cutmix(X, y_true, device)
             if self.amp == 1:
                 with autocast(device_type="cuda"):

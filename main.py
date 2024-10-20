@@ -68,6 +68,7 @@ def get_arg_parse():
     parser.add_argument('-ad', '--adaptive', type=int, help="adaptive SAM 사용 여부", default=1)
     parser.add_argument('--rho', type=int, help="SAM rho 파라미터", default=2.0)
     parser.add_argument('-cm', '--cos_max', type=int, help="cos annealing 주기", default=50)
+    parser.add_argument('-cp', '--cut_p', type=float, help="cutmix 적용 확률", default=0.5)
     parser.add_argument('-sm', '--step_milestone', nargs='+', type=int, help='step lr scheduler milestone', default=[50])
     
     args = parser.parse_args()
