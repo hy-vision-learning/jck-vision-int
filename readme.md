@@ -19,13 +19,12 @@ cd ./jck-vision-init
 ## 3. Install Required Packages
 
 All required packages can be installed via requirements.txt.
-
-> [!NOTE]
-> If an error related to package versions occurs during installation, remove the version information and try again.
-
 ```shell
 pip install -r requirements.txt
 ```
+
+> [!NOTE]
+> If an error related to package versions occurs during installation, remove the version information and try again.
 
 ## 4. Change the random seed
 
@@ -36,6 +35,10 @@ Open the [change_randomseed.py](./change_randomseed.py) file and change the rand
 We are ensembling WideResNet, PyramidNet, and DenseNet. Therefore, a total of four runs are required.
 
 Please train the models by running [ensemble-pyramidnet.ipynb](./ensemble-pyramidnet.ipynb), [ensemble-densenet.ipynb](./ensemble-densenet.ipynb), and [ensemble-wideresnet.ipynb](./ensemble-wideresnet.ipynb) one at a time. Once all the training is complete, run [ensemble-final.ipynb](./ensemble-final.ipynb) to output the final results.
+
+> [!NOTE]
+> 1.	Please run only one .ipynb file at a time.
+> 2.	If you stop a running .ipynb file and need to retrain, restart the kernel before running it again.
 
 ## 6.	Check the Results
 
@@ -48,12 +51,6 @@ The training time for each model will be displayed immediately after the trainin
 The final training results will be output in the final file.  
 
 ![p1](./img/p2.png)
-
-
-## Notes
-
-1.	Please run only one .ipynb file at a time.
-2.	If you stop a running .ipynb file and need to retrain, restart the kernel before running it again.
 
 
 ## main.py 사용법
