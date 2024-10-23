@@ -16,9 +16,12 @@ git clone https://github.com/hy-vision-learning/jck-vision-int.git
 cd ./jck-vision-init
 ```
 
-## 3. Install Required Libraries
+## 3. Install Required Packages
 
 All required packages can be installed via requirements.txt.
+
+> [!NOTE]
+> If an error related to package versions occurs during installation, remove the version information and try again.
 
 ```shell
 pip install -r requirements.txt
