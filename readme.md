@@ -59,6 +59,7 @@ The final training results will be output in the final file.
 |:--:|:--:|:--:|
 |4943872|48h 43m|272.049|
 
+It is expected to take around 22 to 24 hours in practice.
 
 ## main.py 사용법
 
