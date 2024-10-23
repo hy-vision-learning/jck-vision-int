@@ -53,6 +53,13 @@ The final training results will be output in the final file.
 ![p1](./img/p2.png)
 
 
+## Final Results
+
+|seed|time|score|
+|:--:|:--:|:--:|
+|4943872|48h 43m|272.049|
+
+
 ## main.py 사용법
 
 argument 출력
